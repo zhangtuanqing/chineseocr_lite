@@ -18,8 +18,9 @@
 
         <TextView
             android:id="@+id/boxPointTv"
+            android:gravity="left"
             style="@style/TextItemContent"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="坐标" />
 
@@ -135,6 +136,52 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="置信度"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            style="@style/TextItemTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="字坐标"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/charPointTv"
+            style="@style/TextItemTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:text=""
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            style="@style/TextItemTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="字坐标"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/charPointTv"
+            style="@style/TextItemTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:text=""
             android:textSize="12sp" />
 
     </LinearLayout>

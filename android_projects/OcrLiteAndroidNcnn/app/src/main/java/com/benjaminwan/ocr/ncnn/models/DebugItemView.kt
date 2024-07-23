@@ -28,6 +28,7 @@ class DebugItemView @JvmOverloads constructor(
     private lateinit var charScoresTv: TextView
     private lateinit var crnnTimeTv: TextView
     private lateinit var blockTimeTv: TextView
+    private lateinit var charPointTv: TextView
 
     init {
         inflate(context, R.layout.rv_debug_view_item, this)
@@ -41,6 +42,7 @@ class DebugItemView @JvmOverloads constructor(
         charScoresTv = findViewById(R.id.charScoresTv)
         crnnTimeTv = findViewById(R.id.crnnTimeTv)
         blockTimeTv = findViewById(R.id.blockTimeTv)
+        charPointTv = findViewById(R.id.charPointTv)
     }
 
     // 2. Or you can use lateinit
@@ -74,6 +76,9 @@ class DebugItemView @JvmOverloads constructor(
     @TextProp
     lateinit var blockTime: CharSequence
 
+    @TextProp
+    lateinit var charPoints: CharSequence
+
     @AfterPropsSet
     fun useProps() {
         blockIndexTv.text = index
@@ -86,5 +91,6 @@ class DebugItemView @JvmOverloads constructor(
         charScoresTv.text = charScores
         crnnTimeTv.text = crnnTime
         blockTimeTv.text = blockTime
+        charPointTv.text = charPoints
     }
 }

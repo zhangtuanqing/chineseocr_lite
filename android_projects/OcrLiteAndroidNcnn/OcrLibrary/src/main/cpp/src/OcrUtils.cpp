@@ -81,6 +81,14 @@ void drawTextBox(cv::Mat &boxImg, const std::vector<cv::Point> &box, int thickne
     cv::line(boxImg, box[3], box[0], color, thickness);
 }
 
+void drawTextBoxBlue(cv::Mat &boxImg, const std::vector<cv::Point> &box, int thickness) {
+    auto color = cv::Scalar(0, 0, 255);// R(255) G(0) B(0)
+    cv::line(boxImg, box[0], box[1], color, thickness);
+    cv::line(boxImg, box[1], box[2], color, thickness);
+    cv::line(boxImg, box[2], box[3], color, thickness);
+    cv::line(boxImg, box[3], box[0], color, thickness);
+}
+
 void drawTextBoxes(cv::Mat &boxImg, std::vector<TextBox> &textBoxes, int thickness) {
     for (int i = 0; i < textBoxes.size(); ++i) {
         drawTextBox(boxImg, textBoxes[i].boxPoint, thickness);
@@ -182,7 +190,7 @@ std::vector<cv::Point> getMinBoxes(const std::vector<cv::Point> &inVec, float &m
     float *p1 = (float *) boxPoints2f.data;
     std::vector<cv::Point> tmpVec;
     for (int i = 0; i < 4; ++i, p1 += 2) {
-        tmpVec.emplace_back(int(p1[0]), int(p1[1]));
+        tmpVec.emplace_back(int(p1[0] + 0.5), int(p1[1] + 0.5));
     }
 
     std::sort(tmpVec.begin(), tmpVec.end(), cvPointCompare);

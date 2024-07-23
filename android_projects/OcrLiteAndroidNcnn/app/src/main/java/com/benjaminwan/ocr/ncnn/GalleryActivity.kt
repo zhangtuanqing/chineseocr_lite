@@ -265,7 +265,7 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener, SeekBar.OnSee
     }
 
     private fun showLoading() {
-        Glide.with(this).load(R.drawable.loading_anim).into(imageView)
+         Glide.with(this).load(R.drawable.loading_anim).into(imageView)
     }
 
     private fun clearLastResult() {

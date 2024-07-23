@@ -61,6 +61,7 @@ jobject OcrResultUtils::newJBoxPoint(std::vector<cv::Point> &boxPoint) {
     jobject jList = jniEnv->NewObject(jListClass, jListConstructor);
     jmethodID jListAdd = jniEnv->GetMethodID(jListClass, "add", "(Ljava/lang/Object;)Z");
 
+    auto index = 0;
     for (auto point : boxPoint) {
         jobject jPoint = newJPoint(point);
         jniEnv->CallBooleanMethod(jList, jListAdd, jPoint);
@@ -70,6 +71,8 @@ jobject OcrResultUtils::newJBoxPoint(std::vector<cv::Point> &boxPoint) {
 
 jobject OcrResultUtils::getTextBlock(TextBlock &textBlock) {
     jobject jBoxPint = newJBoxPoint(textBlock.boxPoint);
+    jobject jCharPoint = newJBoxPoint(textBlock.charPoints);
+    jobject jBoundingPoint = newJBoxPoint(textBlock.boxBoundingPoint);
     jfloat jBoxScore = (jfloat) textBlock.boxScore;
     jfloat jAngleScore = (jfloat) textBlock.angleScore;
     jdouble jAngleTime = (jdouble) textBlock.angleTime;
@@ -83,8 +86,8 @@ jobject OcrResultUtils::getTextBlock(TextBlock &textBlock) {
         return NULL;
     }
     jmethodID constructor = jniEnv->GetMethodID(clazz, "<init>",
-                                                "(Ljava/util/ArrayList;FIFDLjava/lang/String;[FDD)V");
-    jobject obj = jniEnv->NewObject(clazz, constructor, jBoxPint, jBoxScore, textBlock.angleIndex,
+                                                "(Ljava/util/ArrayList;Ljava/util/ArrayList;Ljava/util/ArrayList;FIFDLjava/lang/String;[FDD)V");
+    jobject obj = jniEnv->NewObject(clazz, constructor, jBoxPint, jCharPoint, jBoundingPoint, jBoxScore, textBlock.angleIndex,
                                     jAngleScore, jAngleTime, jText, jCharScores, jCrnnTime,
                                     jBlockTime);
     return obj;

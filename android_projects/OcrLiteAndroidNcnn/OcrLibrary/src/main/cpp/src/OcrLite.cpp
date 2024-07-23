@@ -2,6 +2,9 @@
 #include <android/asset_manager_jni.h>
 #include "OcrLite.h"
 #include "OcrUtils.h"
+#include <opencv2/imgproc.hpp>
+#include <codecvt>
+#include <locale>
 
 OcrLite::OcrLite() {}
 
@@ -54,6 +57,23 @@ std::vector<cv::Mat> getPartImages(cv::Mat &src, std::vector<TextBox> &textBoxes
     return partImages;
 }
 
+std::wstring convertStringToWString(const std::string& str) {
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    return converter.from_bytes(str);
+}
+
+bool textBoxCompare(const TextBox &a, const TextBox &b) {
+    auto p0 = a.boxPoint[0];
+    auto p1 = b.boxPoint[0];
+    if (p0.x == p1.x) {
+        return p0.y <= p1.y;
+    } else if (p0.y == p1.y) {
+        return p0.x <= p1.x;
+    } else {
+        return p0.x < p1.x;
+    }
+}
+
 OcrResult OcrLite::detect(cv::Mat &src, cv::Rect &originRect, ScaleParam &scale,
                           float boxScoreThresh, float boxThresh,
                           float unClipRatio, bool doAngle, bool mostAngle) {
@@ -84,7 +104,9 @@ OcrResult OcrLite::detect(cv::Mat &src, cv::Rect &originRect, ScaleParam &scale,
                textBoxes[i].boxPoint[3].x, textBoxes[i].boxPoint[3].y);
     }
 
-    Logger("---------- step: drawTextBoxes ----------");
+    std::sort(textBoxes.begin(), textBoxes.end(), textBoxCompare);
+
+    Logger("---------- step: drawTextBoxes: thickes: %d ----------", thickness);
     drawTextBoxes(textBoxPaddingImg, textBoxes, thickness);
 
     //---------- getPartImages ----------
@@ -134,6 +156,60 @@ OcrResult OcrLite::detect(cv::Mat &src, cv::Rect &originRect, ScaleParam &scale,
         TextBlock textBlock{boxPoint, textBoxes[i].score, angles[i].index, angles[i].score,
                             angles[i].time, textLines[i].text, textLines[i].charScores, textLines[i].time,
                             angles[i].time + textLines[i].time};
+        textBlock.charPoints = std::vector<cv::Point>();
+
+        TextLine curTextLine = textLines.at(i);
+        std::vector<int> colIndices = curTextLine.charColIndex;
+        std::vector<int> columns = curTextLine.charColumNum;
+        int totalColumns = curTextLine.colCount;
+        float boxW = textBoxes[i].boxPoint[1].x - textBoxes[i].boxPoint[0].x;
+        float boxH = textBoxes[i].boxPoint[3].y - textBoxes[i].boxPoint[0].y;
+        auto wString = convertStringToWString(curTextLine.text);
+        auto cellWidth = boxW / totalColumns;
+
+        float longSideLen = std::sqrt(std::pow(boxPoint[1].x - boxPoint[0].x, 2) + std::pow(boxPoint[1].y - boxPoint[1].y, 2));
+        float xLength = std::abs(boxPoint[1].x - boxPoint[0].x);
+        float yLength = std::abs(boxPoint[1].y - boxPoint[0].y);
+        float angleCos = xLength / longSideLen;
+        float angleSin = yLength / longSideLen;
+        for (int k = 0; k < colIndices.size(); k++) {
+            int curColIndex = colIndices.at(k);
+
+            int columnStart = curColIndex - columns.at(k) / 2;
+            int columnEnd = curColIndex + columns.at(k) / 2;
+
+            auto x0 = textBoxes[i].boxPoint[0].x + columnStart * cellWidth * angleCos;
+            auto y0 = textBoxes[i].boxPoint[0].y + columnStart * cellWidth * angleSin;
+
+            auto x1 = textBoxes[i].boxPoint[0].x + columnEnd * cellWidth * angleCos;
+            auto y1 = textBoxes[i].boxPoint[0].y + columnEnd * cellWidth * angleSin;
+
+            auto x2 = textBoxes[i].boxPoint[3].x + columnEnd * cellWidth * angleCos;
+            auto y2 = textBoxes[i].boxPoint[3].y + columnEnd * cellWidth * angleSin;
+
+            auto x3  = textBoxes[i].boxPoint[3].x + columnStart * cellWidth * angleCos;
+            auto y3 = textBoxes[i].boxPoint[3].y + columnStart * cellWidth * angleSin;
+
+            auto charBox = std::vector<cv::Point>(4);
+            charBox[0] = cv::Point(x0, y0);
+            charBox[1] = cv::Point(x1, y1);
+            charBox[2] = cv::Point(x2, y2);
+            charBox[3] = cv::Point(x3, y3);
+            auto color = cv::Scalar(255, 0, 0);// R(255) G(0) B(0)
+
+            drawTextBoxBlue(textBoxPaddingImg, charBox, thickness);
+
+            float xPos = textBoxes[i].boxPoint[0].x + (curColIndex * longSideLen / totalColumns) * angleCos;
+            float yPos = (textBoxes[i].boxPoint[0].y + boxH / 2) + (curColIndex * longSideLen / totalColumns) * angleSin;
+            cv::drawMarker(textBoxPaddingImg,  cv::Point(xPos, yPos), color, cv::MarkerTypes::MARKER_CROSS, 8, 1);
+
+            for (auto k = 0; k < 4; k++) {
+                textBlock.charPoints.emplace_back(cv::Point(charBox.at(k).x - padding, charBox.at(k).y - padding));
+            }
+        }
+        auto minSideLen = 0.0f;
+        auto edgeSizes = 0.0f;
+        textBlock.boxBoundingPoint = getMinBoxes(boxPoint, minSideLen, edgeSizes);
         textBlocks.emplace_back(textBlock);
     }
 

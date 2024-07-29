@@ -25,23 +25,32 @@ class OcrEngine(context: Context) {
     private fun convertNativeOcrResult(srcOcrResult: OcrResult, width: Int, height: Int, requestId: String): ImageOcrResponse? {
         val ocrRes = mutableListOf<ImageOcrResponse.OcrRecognize>()
         srcOcrResult.textBlocks.forEach { textBlock ->
-            val textBox = textBlock.boxPoint.flatMap { listOf(it.x.toFloat(), it.y.toFloat()) }
-            val textBoundingBox = ImageOcrResponse.OcrRecognize.BoundingBox(
-                left = textBlock.boundingPoint[0].x.toFloat(),
-                top = textBlock.boundingPoint[0].y.toFloat(),
-                width = (textBlock.boundingPoint[1].x - textBlock.boundingPoint[0].x).toFloat(),
-                height = (textBlock.boundingPoint[3].y - textBlock.boundingPoint[0].y).toFloat()
-            )
+            if (!textBlock.text.isNullOrEmpty()) {
+                val textBox = textBlock.boxPoint.flatMap { listOf(it.x.toFloat(), it.y.toFloat()) }
+                val textBoundingBox = ImageOcrResponse.OcrRecognize.BoundingBox(
+                    left = textBlock.boundingPoint[0].x.toFloat(),
+                    top = textBlock.boundingPoint[0].y.toFloat(),
+                    width = (textBlock.boundingPoint[1].x - textBlock.boundingPoint[0].x).toFloat(),
+                    height = (textBlock.boundingPoint[3].y - textBlock.boundingPoint[0].y).toFloat()
+                )
 
-            val charInfo = mutableListOf<ImageOcrResponse.OcrRecognize.CharBoundingInfo>()
-            textBlock.charPoint.chunked(4).forEachIndexed() { index, it ->
-                val charBoundingPoint = it.flatMap { listOf(it.x.toFloat(), it.y.toFloat()) }
-                val word = textBlock.text[index]
-                charInfo.add(ImageOcrResponse.OcrRecognize.CharBoundingInfo(charBoundingPoint, word.toString()))
+                val charInfo = mutableListOf<ImageOcrResponse.OcrRecognize.CharBoundingInfo>()
+                textBlock.charPoint.chunked(4).forEachIndexed() { index, it ->
+                    val charBoundingPoint = it.flatMap { listOf(it.x.toFloat(), it.y.toFloat()) }
+                    val word = textBlock.text[index]
+                    charInfo.add(
+                        ImageOcrResponse.OcrRecognize.CharBoundingInfo(
+                            charBoundingPoint,
+                            word.toString()
+                        )
+                    )
+                }
+                ocrRes.add(
+                    ImageOcrResponse.OcrRecognize(
+                        textBlock.text, textBoundingBox, textBox, charInfo
+                    )
+                )
             }
-            ocrRes.add(ImageOcrResponse.OcrRecognize(
-                textBlock.text, textBoundingBox, textBox, charInfo
-            ))
         }
         return ImageOcrResponse(ocrRes, requestId, width, height)
     }
